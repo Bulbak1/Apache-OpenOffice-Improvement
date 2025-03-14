@@ -3,7 +3,7 @@
 
 Репоситорий Apache OpenOffice: https://github.com/apache/openoffice
 
-Далее идет инструкция по сборке билда Apache OpenOffice 4.1 на Fedora 41:
+Собственная инструкция по сборке билда Apache OpenOffice 4.1 на Fedora 41:
 ### **Сборка AOO на Fedora 41**
 1. Обновляем систему перед сборкой
 ```bash
