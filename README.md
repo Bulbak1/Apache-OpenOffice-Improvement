@@ -3,7 +3,7 @@
 
 Репоситорий Apache OpenOffice: https://github.com/apache/openoffice
 
-Далее идет инструкция по сборке билда Apache OpenOffice 4.1 на CentOS 5:
+Собственная инструкция по сборке билда Apache OpenOffice 4.1 на CentOS 5:
 1. Для установки выделите 60 Гб памяти минимум. После установки CentOS 5 укажите:
     - Installation method: `mirror.nsc.liu.se` 
     - 64 bit: `/centos-store/5.11/os/x86_64`
