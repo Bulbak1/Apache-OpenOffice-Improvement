@@ -3,91 +3,139 @@
 
 Репоситорий Apache OpenOffice: https://github.com/apache/openoffice
 
-Далее идет инструкция по сборке билда Apache OpenOffice 4.1 на CentOS 5:
-1. Для установки выделите 60 Гб памяти минимум. После установки CentOS 5 укажите:
-    - Installation method: `mirror.nsc.liu.se` 
-    - 64 bit: `/centos-store/5.11/os/x86_64`
+Далее идет инструкция по сборке билда Apache OpenOffice 4.1 на Fedora 41:
+### **Сборка AOO на Fedora 41**
+1. Обновляем систему перед сборкой
+```bash
+sudo dnf update -y
+```
 
-2. Дальше загрузите конфигурационный файл `CentOS-Base.repo` в директорию `/etc/yum.repos.d/CentOS-Base.repo`, вот гайд для замены если файла нет:
->	Разкоментить и прописать эти команды:
->	baseurl=http://vault.centos.org/5.11/os/x86_64/,
->	baseurl=http://vault.centos.org/5.11/updates/x86_64/,
->	baseurl=http://vault.centos.org/5.11/extras/x86_64/
->	
->	Закоментить mirrorlist у первых трёх
->	Изменить в gpgcheck=0
+2. Устанавливаем основные инструменты для сборки и указанные в руководстве (с поправкой на Fedora 41, т.е. не устанавливаем пакеты, которые уже есть в более новых версиях, по сравнению с Fedora 19)
+```bash
+sudo dnf install gcc-c++ ant autoconf bison flex perl gperf libtool nasm python3 cmake java-11-openjdk-devel gtk3-devel gdk-pixbuf2-devel libXt-devel cups-devel dbus-glib-devel librsvg2-devel openldap-devel unixODBC-devel
+```
 
-3. `sudo yum update -y`
-4. `sudo reboot`
+3. Клонируем исходный код OpenOffice с GitHub
+```bash
+sudo mkdir /source
+sudo chown <username> /source
+cd /source
+git clone https://gitbox.apache.org/repos/asf/openoffice.git
+cd openoffice/
+git checkout <branch>
+вместо <username> пишем наше имя пользователя в линуксе
+вместо <branch> пишем ветку, которую будем собирать, в нашем случае AOO42X
+```
+---
+### **Установка DMAKE**
+4. Переходим в папку загрузок с помощью команды 
+```bash
+cd /home/<username>/Загрузки
+```
+5. Прописываем следующую строчку, получаем репозиторий с `dmake`
+```bash
+wget https://github.com/jimjag/dmake/archive/v4.13.1/dmake-4.13.1.tar.gz
+```
+6. Заходим в проводник, в папку загрузки и извлекаем папку с `dmake` из загруженного архива
+7. Копируем извлечённую папку в каталог `main` репозитория `openoffice`
+8. Переходим в эту скопированную папку с помощью 
+```bash
+cd /source/openoffice/main/dmake-4.13.1
+```
+9. Прописать 
+```bash
+./configure --prefix=/usr/local; make install
+```
+10. После установки `dmake` запускаем `./configure` из main, процесс будет ругаться на отсутствие некоторых perl модулей и даст инструкцию по их установке, следуем ей, соглашаемся на автонастройку
+11. После установки всех библиотек заходим в `source/openoffice/main` и прописываем после этого файл сам создастся
+```bash
+autoconf
+```
+---
+### **Дополнительная установка библиотек**
+```bash
+sudo dnf install pam-devel
+sudo dnf install perl-XML-Parser
+```
+12. Пояснение: xml парсер почему-то не установился по встроенной в терминал инструкции, поэтому качаем его отдельно `pam-devel` нужна обязательно, устанавливать её можно было ещё раньше
+13. `LWP::Protocol::https` (который не устанавливается вместе с perl), можно установить командой ниже:
+```bash
+sudo dnf install perl-LWP-Protocol-https
+```
+14. Чтобы проверить работоспособность модуля можно ввести
+```bash
+perl -MLWP::Protocol::https -e 'print "Module installed\n"'
+```
 
->Наши сборки в сообществе фактически выполняются на виртуальной машине VMware Fusion. Время сборки в основном зависит от количества процессоров и выделенной оперативной памяти; мы используем 8-ядерную виртуальную машину с 24 ГБ памяти.
-### Настройка репозиториев и пакетов
-5. `cd /`
-6.  `wget http://archives.fedoraproject.org/pub/archive/epel/5/i386/epel-release-5-4.noarch.rpm`
-7.  `sudo rpm -ivh epel-release-5-4.noarch.rpm`
-8.  `sudo yum update -y`
-9. `sudo yum install gcc expat-devel openssl-devel autoconf gcc-c++ cups-devel pam-devel java-1.6.0-openjdk-devel rpm-build dpkg fakeroot gperf freetype-devel libX11-devel libXt-devel fontconfig-devel libXrandr-devel bison flex GConf2-devel gnome-vfs2-devel gtk2-devel gstreamer-devel gstreamer-plugins-base-devel mesa-libGLU-devel git ccache`
-10. `ccache -M 2G`
-### Загрузка Ant
-11. `sudo yum install ant17 ant17-apache-regexp`
-12. `cd /`
-13. Загружаем в корневой каталог через **WinSCP** файл - `apache-ant-1.9.15-bin.tar.bz2`
->	wget http://mirrors.nxnethosting.com/apache//ant/binaries/apache-ant-1.9.15-bin.tar.bz2
-14. `tar xvf apache-ant-1.9.15-bin.tar.bz2`
-15. `ln -s apache-ant-1.9.15 ant`
-### Установка OpenSSL
-16. `cd /usr/local/src`
-17. Загружаем в каталог `/usr/local/src` через **WinSCP** файл - `openssl-1.0.2a.tar.gz`
->	wget https://www.openssl.org/source/openssl-1.0.2a.tar.gz
-18. `tar xzf openssl-1.0.2a.tar.gz`
-19. `cd openssl-1.0.2a`
-20. `./config -fpic shared; make`
-21. `make install`
-22. `echo "/usr/local/ssl/lib" >> /etc/ld.so.conf`
-23. `ldconfig`
-### Установка модулей Perl
-24. `cd /usr/local/src`
-25. `wget http://www.cpan.org/src/5.0/perl-5.14.4.tar.gz`
-26. `tar xvf perl-5.14.4.tar.gz`
-27. `cd perl-5.14.4`
-28. `export OPENSSL_PREFIX=/usr/local/ssl`
-29. `./configure.gnu ; make`
-30. `make install`
-31. `/usr/local/bin/perl -MCPAN -e shell`
-      *[ reply "yes" to all questions to carry out cpan's autoconfiguration ]*
-  * cpan[1]> `force install Archive::Zip`
-  * cpan[2]> `install XML::Parser LWP::UserAgent Digest::SHA Digest::MD5 LWP::Protocol::https`
-  * cpan[3]> `exit`
+15. По аналогии с DMAKE устанавливаем и EPM [с оф гайда на сайте](https://wiki.openoffice.org/wiki/Documentation/Building_Guide_AOO/Step_by_step_Linux#CentOS_7_and_Fedora_19_for_AOO_4.2.x_and_later)
+```bash
+wget https://github.com/jimjag/epm/archive/v5.0.0/epm-5.0.0.tar.gz
+cd epm-5.0.0
+./configure --prefix=/usr/local ; make install
+```
 
->Если будет выходить ошибка связанная с *LWP::Protocol::https*, то необходимо повторно прописать `sudo cpan -f LWP::Protocol::https` - эта команда проигнорирует тесты и их результаты!
+16. После устанавливаем файл `unowinreg.dll`
+```bash
+wget -O external/unowinreg/unowinreg.dll https://www.openoffice.org/tools/unowinreg_prebuild/680/unowinreg.dll
+```
+
+17. Устанавливаем дополнительные библиотеки
+```bash
+sudo dnf install GConf2-devel
+sudo dnf install gnome-vfs2-devel
+sudo dnf install gtk2-devel
+sudo dnf install rpm-build
+sudo dnf install rpm-build
+```
 
 ---
-### Загрузка репозитория
-32. `sudo mkdir /source`
-33. `sudo chown <yourusername> /source`
-34. `cd /source`
-35. Загружаем в каталог `/source` через **WinSCP** файл - `openoffice-AOO41X.zip`
->	git clone https://github.com/apache/openoffice.git
-36. `unzip openoffice-AOO41X.zip`
-37. Переименовываем `openoffice-AOO41X` через **WinSCP** в `openoffice`
-38. `cd /source/openoffice/main`
 
-### Решение проблем
-* #### Отсутствует geo-2.0
->	1. Загружаем в корень через WinSCP файл - glib-2.26.0.tar.gz
->	2. Распаковываем через WinSCP
->	3. Перейти в cd /glib-2.26.0
->	4. Пишем ./configure -> make -> sudo make install
->	5. glib pkg-config --modversion glib-2.0
->	6. gio pkg-config --modversion gio-2.0
-* #### Отсутствует junit
->	Загружаем в /root через WinSCP файл - junit-4.13.2.jar (кидать .jar можно куда угодно, главное указать путь при запуске ./configure).
-* #### Отсутствует dmake
->	1. Загружаем в корень через WinSCP файл - dmake-4.12.tar.bz2
->	2. Распаковываем через WinSCP
->	3. Перейти в cd /dmake-4.12
->	4. Пишем ./configure -> make -> sudo make install
-### Сборка ./configure
-39. `autoconf`
-40. `./configure --with-dmake-url --with-epm-url --with-junit=/root/junit-4.13.2.jar`
-41. `./bootstrap`
+18. Скачиваем `hamcrest-core` в `cd /usr/share/java`
+```bash
+sudo wget https://repo1.maven.org/maven2/org/hamcrest/hamcrest-core/1.3/hamcrest-core-1.3.jar
+```
+
+---
+
+19. Для сборки OpenOffice нам нужна java именно версии 1.8.0, устанавливаем её командой
+```bash
+sudo dnf install java-1.8.0-openjdk-devel
+```
+20. Затем пишем команду
+```bash
+sudo update-alternatives --config java
+```
+21. Там по подсказке выбираем нужную нам версию java (просто вводим её номер). Затем, при запуске конфигурации прописываем следующее
+```bash
+--with-jdk-home=/usr/lib/jvm/java-1.8.0-openjdk
+```
+22. Переходим в 
+```bash
+cd /source/openoffice/main
+```
+23. Так как GTK у нас почему-то не встаёт, не смотря на наличие обеих версии, будем собирать без него, для этого поставим необходимую настройку при запуске конфигурации `disable-gtk`, получится следующая команда
+```bash
+./configure --disable-gtk --with-jdk-home=/usr/lib/jvm/java-1.8.0-openjdk
+```
+
+---
+
+24. При выполнении `./bootstrap` происходит ошибка скачивания `expat`, может быть ссылка устарела, поэтому качаем вручную, вот архив `...`. Далее мы кидаем этот архив в папку `source/openoffice/main/ext_sources` но данный файл нужно переименовать в  
+```bash
+5e9974d422dc4b157f300568ad28ebf6-expat-2.5.0.tar.bz2
+```
+25. Сделать это у нас не получится, так как в этом каталоге уже есть такой файл (как я понял это битый архив, который не смог скачаться), поэтому мы сначала находим и удаляем уже существующий, а потом переименовываем уже наш `expat` архив, после этого можно прописать 
+```bash
+md5sum /source/openoffice/ext_sources/5e9974d422dc4b157f300568ad28ebf6-expat-2.5.0.tar.bz2
+```
+25. Если всё будет без ошибок, значит сработало, можно дальше продолжать выполнение ./bootstrap
+
+---
+
+24. После успешного выполнения ./configure поочерёдно выполняем следующие команды
+```bash
+./bootstrap
+source *.Set.sh
+cd instsetoo_native
+build --all
+```
